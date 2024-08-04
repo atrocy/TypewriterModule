@@ -49,6 +49,6 @@ local TypeObj = TypewriterModule.new(TextLabel, Text, CharactersPerSecond, Yield
 Variables are pretty self explanatory to which arguments TypingObject requires lol.
 
 ### NOTE
-*Please keep in mind that if you create 2 TypingObjects and use :Typewrite() method on them, object's thread will destroy.*
+*Please keep in mind that if you create 2 TypingObjects and use :Typewrite() method on them, object* **NO** *longer be avaible.*
 
 Further documentation can be found in the wiki!
