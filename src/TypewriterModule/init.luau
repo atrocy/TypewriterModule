@@ -33,11 +33,11 @@
 	[ Example Usage ]
 		local TypewriterModule = require(path)
 		local textlabel = script.Parent
-		local text = 'NPC: Hello, how are you doing?? Yeah.. same.'<-----------
-		local TypeObj = TypewriterModule.new(textlabel, text, 25, true)		  |
-																			  | OUTPUTS THIS!!
-		TypewriterModule.Finished:Connect(function(session)					  |
-			print(session.Text) -----------------------------------------------
+		local text = 'NPC: Hello, how are you doing?? Yeah.. same.'
+		local TypeObj = TypewriterModule.new(textlabel, text, 25, true)
+
+		TypewriterModule.Finished:Connect(function(obj)
+			print(obj.Text)
 		end)
 		
 		TypewriterModule.newSpecialChar(':')
