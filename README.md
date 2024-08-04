@@ -8,8 +8,8 @@ local textlabel = path
 local text = 'NPC: Hello, how are you doing?? Yeah.. same.'
 local TypeObj = TypewriterModule.new(textlabel, text, 25, true)
 
-TypewriterModule.Finished:Connect(function(session)
-print(session.Text) 
+TypewriterModule.Finished:Connect(function(obj)
+print(obj.Text) 
 end)
 		
 TypewriterModule.newSpecialChar(':')
@@ -22,7 +22,7 @@ print('Completed!')
 
 But what exactly happened in this code?
 
-What is `TypingObject`?
+What is `TypingObject`? <br/>
 **TypingObject** - is an object, created to use methods on.
 
 With `TypingObject` you can:
@@ -49,6 +49,6 @@ local TypeObj = TypewriterModule.new(TextLabel, Text, CharactersPerSecond, Yield
 Variables are pretty self explanatory to which arguments TypingObject requires lol.
 
 ### NOTE
-*Please keep in mind that if you create 2 TypingObjects and use :Typewrite() method on them, object's \n thread will destroy.*
+*Please keep in mind that if you create 2 TypingObjects and use :Typewrite() method on them, object's thread will destroy.*
 
 Further documentation can be found in the wiki!
