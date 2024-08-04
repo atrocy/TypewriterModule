@@ -31,7 +31,7 @@ With `TypingObject` you can:
 * Wait
 * Cancel
 
-AND *MORE*
+AND **MORE**
 
 # Creating TypingObject
 
