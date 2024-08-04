@@ -1,0 +1,549 @@
+--[[
+	Made by cheez1i!!!!(aka Romazka57/atrocy)
+
+	This module uses FastSignal.
+	https://devforum.roblox.com/t/fastsignal-1021-a-consistent-signal-library/1360042
+	
+	[ UPDATE 04.08.2024 ]
+		Added:
+		
+			[ EVENTS ]
+				Resumed event.
+				Destroyed event.
+			
+			[ FUNCTIONS ]
+			
+				
+				
+				
+			[ OTHER CHANGES ]
+			
+				
+				
+			[ OBJECT UPDATES ]
+			
+				
+		Fixes:
+			
+	
+	# Typewriter
+	Easy, simple, typewriter effect!
+	With features like: Cancelling, Resuming, Yielding on special characters... AND MORE!
+	
+	[ Example Usage ]
+		local TypewriterModule = require(path)
+		local textlabel = script.Parent
+		local text = 'NPC: Hello, how are you doing?? Yeah.. same.'<-----------
+		local TypeObj = TypewriterModule.new(textlabel, text, 25, true)		  |
+																			  | OUTPUTS THIS!!
+		TypewriterModule.Finished:Connect(function(session)					  |
+			print(session.Text) -----------------------------------------------
+		end)
+		
+		TypewriterModule.newSpecialChar(':')
+		TypeObj:SetSpecialCharYieldTime(0.1)
+		
+		TypeObj:Typewrite()
+		TypeObj:Wait()
+		print('Completed!')
+		
+	[ Typewriter API ]
+	
+		[ MODES ]
+		
+			'Create' => DEFAULT, Clears off the TextLabel, typewrites without continuing the last text.
+			'Continue' => Continues on typewriting the last text, doesn't clear off the TextLabel.
+			
+		[ SET DEFAULTS FUNCTIONS ]
+			
+			Typewriter.newSpecialChar(character: string) -> ()
+				Description:
+					Adds a new special character to the table.
+				Note:
+					If a special character gets hit, it yields way more time, depends.. on what yield time is set.
+					Default yield time for special characters is 0.5
+					
+					
+			TypewriterObject.SetDefaultSpecialCharYieldTime(time: number) -> ()
+				Description:
+					Sets a yield time for special characters for the typewriter object.
+					
+					
+			Typewriter.SetDefaultContinueSpace(Enabled: boolean)
+				Description:
+					Sets if ContinueSpace is default-ly enabled for Typewriting.
+		
+		[ FUNCTIONS ]
+		
+			Typewriter.new(TextLabel, text: string, CharactersPerSecond: number, yieldOnSpecialChar: boolean?) -> TypewriterObject
+				Description:
+					Creates a new TypewriterObject
+				Note:
+					yieldOnSpecialChar is NOT required!
+					if set to true, will wait more, if hit on a special char.
+					adding new special characters, or setting more time to yield on them could be find further in the doc.
+					If CharactersPerSecond is set to -1 the typewriting will be VERY fast.-
+					-If you want to write the text instantly, use FinishText method, which could be find further in the doc.
+					
+		
+			TypewriterObject:Typewrite(Mode: string?, Sound: Sound?, ContinueSpace: boolean?) -> ()
+				Description:
+					Typewrites the text you provided for the object.
+					
+					Sound will play as each letter gets typewritten in the text.
+					
+					ContinueSpace only applies if the chosen Mode is Continue.
+					ContinueSpace adds a space to the old text, merging the new written text.
+					
+					Triggers Finished event after finishing typewriting.
+				Note:
+					If the Mode argument is not provided, it'll use the default option: Create.
+					ContinueSpace's default value is false.
+				
+				
+			TypewriterObject:Destroy() -> ()
+				Description:
+					Destroys the TypewriterObject.
+				Note:
+					Triggers Finished event.
+			
+			
+			TypewriterObject:Clear() -> ()
+				Description:
+					Clears the TextLabel
+				Note:
+					Triggers Finished event.
+					
+					
+			TypewriterObject:Cancel() -> ()
+				Description:
+					Cancels the typewriting, means that the text will stop on typing.
+			
+			
+			TypewriterObject:Resume() -> ()
+				Description:
+					Resumes, if the object was canceled, will resume and continue on typing.
+					
+					
+			TypewriterObject:IsActive() -> boolean
+				Description:
+					Returns if the object is active, do be exact, if it is canceled or not.
+					
+					
+			TypewriterObject:Wait() -> yields
+				Description:
+					Yields the code until the object is finished typewriting.
+					
+					
+			TypewriterObject:SetText(text: string) -> ()
+				Description:
+					Sets a new Text for the object so it could be Typewrited again.
+				Note:
+					If object is typewriting, it'll yield the code until its finished, then it sets the new value for text.
+					DEFAULT: ''
+					
+			
+			TypewriterObject:SetCharactersPerSec(CharsPerSec: number) -> ()
+				Description:
+					Sets a new CPS for the object.
+				Note:
+					If object is typewriting, it'll yield the code until its finished, then it sets the new value for CPS.
+					DEFAULT: 25
+					
+					
+			TypewriterObject:SetMode(Mode: string) -> ()
+				Description:
+					Sets a new Mode for the object.
+				Note:
+					If object is typewriting, it'll yield the code until its finished, then it sets the new value for text.
+					Set the mode using Typewriter.TypeModes.MODENAME!
+					DEFAULT: 'Create'
+					
+			
+			TypewriterObject:SetSound(Sound: Sound) -> ()
+				Description:
+					Sets a new text for the object so it could be Typewrited again.
+				Note:
+					If object is typewriting, it'll yield the code until its finished, then it sets the new value for text.
+					If you did not provide the sound, it will return end/fail. 
+				
+					
+			TypewriterObject:SetContinueSpaceEnabled(Enabled: boolean) -> ()
+				Description:
+					Enables/Disables ContinueSpace.
+				Note:
+					If object is typewriting, it'll yield the code until its finished, then it enables/disables ContinueSpace
+					DEFAULT: true	
+			
+			
+			TypewriterObject:SetSpecialCharYieldEnabled(time: number) -> ()
+				Description:
+					Enables/Disables SpecialCharYield
+				Note:
+					If object is typewriting, it'll yield the code until its finished, then it enables/disables SpecialCharYield
+			
+			
+			TypewriterObject:SetContinueSpaceEnabled(Enabled: boolean) -> ()
+				Description:
+					Sets a new yield time for the object so it could be Typewrited again.
+				Note:
+					If object is typewriting, it'll yield the code until its finished, then it sets the new value for yield time.
+			
+			
+			TypewriterObject:FinishText() -> ()
+				Description:
+					Finishes the whole text, in addition stops typewriting, of course.
+				Note:
+					Triggers Finished Event
+			
+			
+		[ EVENTS ]
+			READ THIS!!!
+			NOTE: Put events on the top of your script, as an example, after requiring the module.
+			
+				  Why is that?
+				  
+				  If you put it on the bottom, the objects will yield the code and the connectors wont be able
+				  to get triggered.
+		
+			Typewriter.Finished:Connect(function(obj)) -> TypewriterObject
+				Description:
+					Gets triggered when a TypewriterObject finishes Typewriting, returning itself.
+			
+			
+			Typewriter.Canceled:Connect(function(obj)) -> TypewriterObject
+				Description:
+					Gets triggered when a TypewriterObject gets canceled, returning itself.
+				Note:
+					Canceled only returns a session with the parameters you provided.
+					What does this mean?
+					If you used Mode Continue, it wont return obj.Text with the previous text, only with the text parameter-
+					-YOU provided.
+					
+				
+		
+
+]]
+
+local FastSignal = require(script.FastSignal)
+
+local typewriter = {}
+typewriter.__index = typewriter
+
+local DEFAULT_SPECIAL_CHARS = { --default special characters, you can modify this.
+	',','.','!','?'
+}
+
+local settings = {
+	DEFAULT_SPECIAL_CHAR_YIELD = 0.5,
+	DEFAULT_CONTINUE_SPACE = true
+}
+
+local running = {}
+
+typewriter.TypeModes = {
+	Create = 'Create',
+	Continue = 'Continue'
+}
+
+typewriter.Finished = FastSignal.new()
+
+typewriter.Canceled = FastSignal.new()
+typewriter.Resumed = FastSignal.new()
+
+typewriter.Destroyed = FastSignal.new()
+
+local function isSpecialChar(character: string) : boolean
+	return table.find(DEFAULT_SPECIAL_CHARS, character) ~= nil
+end
+
+local function destroySession(object)
+	for i, thread in running do
+		if thread.TextLabel ~= object.TextLabel and not thread.Thread then continue end
+		
+		typewriter.Cancel(thread)
+		typewriter.Destroy(thread)
+		coroutine.close(thread.Thread)
+		thread.Thread = nil
+		thread = nil
+		object = nil
+		table.remove(running, i)
+	end
+end
+
+local function updateSessionThread(object)
+	for _, thread in running do
+		if thread.Thread ~= object.Thread then continue end
+		thread.Thread = object.Thread
+		return
+	end
+	
+	table.insert(running, object)
+end
+
+local function checkIfOtherRunning(object)
+	for _, thread in running do
+		if thread.TextLabel ~= object.TextLabel or not thread.Thread or thread == object then continue end
+		return thread
+	end
+	
+	return nil
+end
+
+local function checkIfObjectRunning(object)
+	for _, thread in running do
+		if thread ~= object then continue end
+		return true
+	end
+
+	return false
+end
+
+local function setNilToObject(object)
+	object.TextLabel = nil
+	object.Text = nil
+	object.Time = nil
+	object.SpecialCharYield = nil
+	object.SpecialCharYieldTime = nil
+	object.Canceled = nil
+	object.Finished = nil
+	object.Mode = nil
+	object.ContinueSpace = nil
+	if object.Sound then object.Sound = nil end
+	--object.Thread closing is going to be handled in a destroySession function.
+end
+
+local function Finish(session)
+	typewriter.Finished:Fire(session)
+end
+
+local function onCancel(session)
+	typewriter.Canceled:Fire(session)
+end
+
+local function onResume(session)
+	typewriter.Resumed:Fire(session)
+end
+
+local function onDestroy(session)
+	typewriter.Destroyed:Fire(session)
+end
+
+function typewriter.new(TextLabel: TextLabel, Text: string, CharsPerSec: number, yieldOnSpecialChars: boolean?)
+	TextLabel = TextLabel or Instance.new('TextLabel')
+	Text = Text or ''
+	CharsPerSec = CharsPerSec or 25
+	yieldOnSpecialChars = yieldOnSpecialChars or false
+	
+	local self = setmetatable({}, typewriter)
+	
+	self.TextLabel = TextLabel
+	self.Text = Text
+	self.Time = 1/CharsPerSec
+	self.SpecialCharYield = yieldOnSpecialChars
+	self.SpecialCharYieldTime = settings.DEFAULT_SPECIAL_CHAR_YIELD
+	self.Thread = false
+	self.Canceled = false
+	self.Finished = false
+	
+	return self
+end
+
+function typewriter.SetDefaultCharYieldTime(time: number)
+	if not time then return end
+	time = math.abs(time) or settings.DEFAULT_SPECIAL_CHAR_YIELD
+	settings.DEFAULT_SPECIAL_CHAR_YIELD = time
+end
+
+function typewriter.SetDefaultContinueSpace(Enabled: boolean)
+	-- Why cant we just do ContinueSpace = ContinueSpace or true?
+	-- Because if Enabled is set to false it will turn into true, due to roblox's logic
+	if Enabled == nil or typeof(Enum) ~= 'boolean' then Enabled = settings.DEFAULT_CONTINUE_SPACE end
+	settings.DEFAULT_CONTINUE_SPACE = Enabled
+end
+
+function typewriter.newSpecialChar(char: string)
+	if not table.find(DEFAULT_SPECIAL_CHARS, char) then
+		table.insert(DEFAULT_SPECIAL_CHARS, char)
+	else
+		warn(char..' has been already registered in the module.')
+	end
+end
+
+--[[
+
+Modes:
+
+	Create --DEFAULT, clears the textlabel and typewrites
+	Continue --continues the text that has been written.
+
+]]
+
+function typewriter:Typewrite(Mode: string?, ContinueSpace: boolean?, Sound: Sound?)
+	if not self.TextLabel or not self.Text or not self.Time then return end
+	if self.Finished then self.Finished = false end
+	
+	-- Why cant we just do ContinueSpace = ContinueSpace or true?
+	-- Because if Enabled is set to false it will turn into true, due to roblox's logic
+	if ContinueSpace == nil or typeof(ContinueSpace) ~= 'boolean' then ContinueSpace = settings.DEFAULT_CONTINUE_SPACE end
+	--gotta add ~= nil cuz self.ContinueSpace is a boolean!!!
+	if self.ContinueSpace ~= nil or self.ContinueSpace == false then ContinueSpace = self.ContinueSpace end
+	
+	Mode = Mode or typewriter.TypeModes.Create
+	if self.Mode then Mode = self.Mode end
+	
+	if not typewriter.TypeModes[Mode] then Mode = 'Create' end
+	
+	local oldText = self.TextLabel.Text or ''
+
+	if Mode == typewriter.TypeModes.Continue and ContinueSpace then oldText = oldText..' ' end
+	
+	local isRunning = checkIfOtherRunning(self)
+	if isRunning ~= nil then destroySession(isRunning) end
+
+	local thread = coroutine.create(function()
+		for i = 1, #self.Text do
+			if self.Finished then break end
+			local currentText = string.sub(self.Text, 1, i)
+			local currentChar = string.sub(self.Text, i, i)
+			local yield = isSpecialChar(currentChar)
+				
+			if Mode == typewriter.TypeModes.Create then 
+				self.TextLabel.Text = currentText 
+			elseif typewriter.TypeModes.Continue then
+				self.TextLabel.Text = oldText..currentText 
+			end
+			
+			if Sound and Sound:IsA('Sound') then Sound:Play() end
+			
+			--[[  after destroying, self can turn into an empty table and fire it through the signal
+				                           |                  
+				                          THIS        ]]
+			
+			if i >= #self.Text and self ~= {} then self.Text = self.TextLabel.Text self.Finished = true Finish(self) end
+			
+			if self.Time ~= -1 and (not yield or not self.SpecialCharYield) then task.wait(self.Time) end
+			if self.SpecialCharYield and yield then task.wait(self.SpecialCharYieldTime) end
+			if self.Canceled then coroutine.yield() end
+		end
+	end)
+	
+	self.Thread = thread
+	self.Mode = Mode
+	-- if you want to add this use :SetContinueSpaceEnabled.
+	
+	--self.ContinueSpace = ContinueSpace
+	if Sound then self.Sound = Sound end
+	--table.insert(running, self)
+	updateSessionThread(self)
+	
+	coroutine.resume(thread)
+end
+
+function typewriter:Destroy()
+	if self.TextLabel then 
+		self.Finished = true
+		Finish(self)
+		onDestroy(self)
+		setNilToObject(self)
+		for i, thread in running do
+			if thread.Thread ~= self.Thread then continue end
+			running[i] = nil
+			return
+		end
+		
+	end
+end
+
+function typewriter:Clear()
+	if self.TextLabel then
+		self.Finished = true
+		Finish(self)
+		self.TextLabel.Text = ''
+	end
+end
+
+function typewriter:Cancel()
+	if self.Thread and not self.Canceled then self.Canceled = true onCancel(self) end
+end
+
+function typewriter:Resume()
+	if self.Thread and self.Canceled then self.Canceled = false coroutine.resume(self.Thread) onResume(self) end
+end
+
+function typewriter:IsActive()
+	return self.Canceled == false
+end
+
+function typewriter:Wait()
+	repeat task.wait()
+		
+	until self.Finished
+	return self
+end
+
+function typewriter:SetText(text: string)
+	if checkIfObjectRunning(self) then typewriter.Wait(self) end
+	self.Text = text or ''
+end
+
+function typewriter:SetCharactersPerSecond(CharsPerSec: number)
+	if checkIfObjectRunning(self) then typewriter.Wait(self) end
+	CharsPerSec = CharsPerSec or 25
+	self.Time = 1/CharsPerSec
+end
+
+function typewriter:SetMode(Mode: string)
+	if checkIfObjectRunning(self) then typewriter.Wait(self) end
+	self.Mode = Mode or typewriter.TypeModes.Create
+end
+
+function typewriter:SetContinueSpaceEnabled(Enabled: boolean)
+	if checkIfObjectRunning(self) then typewriter.Wait(self) end
+	-- Why cant we just do Enabled = Enabled or true?
+	-- Because if Enabled is set to false it will turn into true, due to roblox's logic
+	if Enabled == nil or typeof(Enabled) ~= 'boolean' then Enabled = true end
+	self.ContinueSpace = Enabled
+end
+
+--function typewriter:UnsetContinueSpace()
+--	if self.ContinueSpace ~= nil then self.ContinueSpace = nil end **GOT DEPRECATED WHILE PUSHING THE UPDATE LOL**
+--end
+
+function typewriter:SetSound(Sound: Sound)
+	if not Sound then return end
+	if checkIfObjectRunning(self) then typewriter.Wait(self) end
+	self.Sound = Sound
+end
+
+function typewriter:SetSpecialCharYieldTime(time: number)
+	if checkIfObjectRunning(self) then typewriter.Wait(self) end
+	time = math.abs(time) or settings.DEFAULT_SPECIAL_CHAR_YIELD
+	self.SpecialCharYieldTime = time
+end
+
+function typewriter:SetSpecialCharYieldEnabled(Enabled: boolean)
+	if checkIfObjectRunning(self) then typewriter.Wait(self) end
+	-- Why cant we just do Enabled = Enabled or true?
+	-- Because if Enabled is set to false it will turn into true, due to roblox's logic
+	if Enabled == nil or typeof(Enabled) ~= 'boolean' then Enabled = true end
+	self.SpecialCharYield = Enabled
+end
+
+function typewriter:FinishText()
+	if checkIfObjectRunning(self) then
+		local textLabelText = self.TextLabel.Text
+		if self.ContinueSpace then textLabelText = textLabelText..' ' end
+		
+		if not self.Mode or self.Mode == typewriter.TypeModes.Create then
+			self.TextLabel.Text = self.Text
+		elseif self.Mode == typewriter.TypeModes.Continue then --fixing the FinishText to be compatible with Continue Mode
+			self.TextLabel.Text = textLabelText..self.Text
+		end
+		
+		self.Finished = true
+		Finish(self)
+	end
+end
+
+return typewriter
