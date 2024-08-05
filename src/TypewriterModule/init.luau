@@ -4,27 +4,29 @@
 	This module uses FastSignal.
 	https://devforum.roblox.com/t/fastsignal-1021-a-consistent-signal-library/1360042
 	
-	[ UPDATE 04.08.2024 ]
+	[ UPDATE 1.2.4 ]
 		Added:
 		
 			[ EVENTS ]
-				Resumed event.
-				Destroyed event.
+			 	Paused event.
 			
 			[ FUNCTIONS ]
 			
-				
-				
+				TypingObject:SetTimeBetweenTyping(time: number) [almost the same as SetCharacterPerSecond but you actually set the time, Example: 0.3]
 				
 			[ OTHER CHANGES ]
-			
+				**IMPORTANT**
+					You can now PAUSE the text using [p:number] command!
+						Example:
+							local TypeObj = TypingModule.new(path, 'Hello,[p:0.5] Player!')
+							TypeObj:Typewrite()
 				
 				
 			[ OBJECT UPDATES ]
-			
+				Sound property [Now Works Correctly.]
 				
 		Fixes:
-			
+			Sound
 	
 	# Typewriter
 	Easy, simple, typewriter effect!
@@ -149,6 +151,15 @@
 				Note:
 					If object is typewriting, it'll yield the code until its finished, then it sets the new value for CPS.
 					DEFAULT: 25
+
+			
+			TypewriterObject:SetTimeBetweenTyping(time: number) -> ()
+				Description:
+					Sets a time between typing.
+					Almost the same as SetCharactersPerSec method but you actually set the time, instead of it being calculated.
+				Note:
+					If object is typewriting, it'll yield the code until its finished, then it sets the new value for CPS.
+					DEFAULT: 0.04
 					
 					
 			TypewriterObject:SetMode(Mode: string) -> ()
@@ -224,6 +235,11 @@
 			Typewriter.Resumed:Connect(object) -> TypewriterObject
 				Description:
 					Gets triggered when a TypewriterObject resumes, returning itself.
+
+
+			Typewriter.Paused:Connect(object, pauseTime) -> TypewriterObject, number
+				Description:
+					Gets triggered when a TypewriterObject pauses, returning itself.
 			
 
 			Typewriter.Destroyed:Connect(object) -> TypewriterObject
@@ -232,7 +248,15 @@
 				Note:
 					Most likely going to return a TypewriterObject that only contains a dead thread. Not very useful..
 					
-					
+			
+		[ TEXT COMMANDS ]
+			
+			[p:number]
+				Description:
+					Pauses the text for the amount of time you provided.
+				Note:
+					Triggers Paused event.
+		
 				
 		
 
@@ -242,6 +266,7 @@ local FastSignal = require(script.FastSignal)
 
 local typewriter = {}
 typewriter.__index = typewriter
+typewriter.Version = '1.2.4'
 
 local DEFAULT_SPECIAL_CHARS = { --default special characters, you can modify this.
 	',','.','!','?'
@@ -262,9 +287,28 @@ typewriter.TypeModes = {
 typewriter.Finished = FastSignal.new()
 
 typewriter.Canceled = FastSignal.new()
+typewriter.Paused = FastSignal.new()
 typewriter.Resumed = FastSignal.new()
 
 typewriter.Destroyed = FastSignal.new()
+
+local function atPause(text: string, index: number) --use when u hit on [ character
+	local p = text:sub(index+1, index+1) == 'p'
+	local column = text:sub(index+2, index+2) == ':'
+	-- local closingbracket
+	local pauseValue
+
+	if column then
+		local closebracketpos = text:find(']', index+2) --we need to recieve a position to sub for a pause value
+		if closebracketpos == nil then return nil, true, nil end
+		closebracketpos -= 1
+
+		pauseValue = text:sub(index+3, closebracketpos)
+		if pauseValue then return pauseValue, true, 4+pauseValue:len() end
+	end
+
+	return nil, false, nil --if not column
+end
 
 local function isSpecialChar(character: string) : boolean
 	return table.find(DEFAULT_SPECIAL_CHARS, character) ~= nil
@@ -326,12 +370,17 @@ local function setNilToObject(object)
 	--object.Thread closing is going to be handled in a destroySession function.
 end
 
+--event fire functions
 local function Finish(session)
 	typewriter.Finished:Fire(session)
 end
 
 local function onCancel(session)
 	typewriter.Canceled:Fire(session)
+end
+
+local function Pause(session, time: number)
+	typewriter.Paused:Fire(session, time)
 end
 
 local function onResume(session)
@@ -341,11 +390,12 @@ end
 local function onDestroy(session)
 	typewriter.Destroyed:Fire(session)
 end
-
-function typewriter.new(TextLabel: TextLabel, Text: string, CharsPerSec: number, yieldOnSpecialChars: boolean?)
+--
+function typewriter.new(TextLabel: TextLabel, Text: string, CharsPerSec: number, Sound: Sound, yieldOnSpecialChars: boolean?)
 	TextLabel = TextLabel or Instance.new('TextLabel')
 	Text = Text or ''
 	CharsPerSec = CharsPerSec or 25
+	Sound = Sound or nil
 	yieldOnSpecialChars = yieldOnSpecialChars or false
 	
 	local self = setmetatable({}, typewriter)
@@ -353,6 +403,7 @@ function typewriter.new(TextLabel: TextLabel, Text: string, CharsPerSec: number,
 	self.TextLabel = TextLabel
 	self.Text = Text
 	self.Time = 1/CharsPerSec
+	self.Sound = Sound
 	self.SpecialCharYield = yieldOnSpecialChars
 	self.SpecialCharYieldTime = settings.DEFAULT_SPECIAL_CHAR_YIELD
 	self.Thread = false
@@ -392,7 +443,7 @@ Modes:
 
 ]]
 
-function typewriter:Typewrite(Mode: string?, ContinueSpace: boolean?, Sound: Sound?)
+function typewriter:Typewrite(Mode: string?, ContinueSpace: boolean?) --if sound is provided, it will override the Object's sound.
 	if not self.TextLabel or not self.Text or not self.Time then return end
 	if self.Finished then self.Finished = false end
 	
@@ -419,7 +470,19 @@ function typewriter:Typewrite(Mode: string?, ContinueSpace: boolean?, Sound: Sou
 			if self.Finished then break end
 			local currentText = string.sub(self.Text, 1, i)
 			local currentChar = string.sub(self.Text, i, i)
-			
+
+			if currentChar == '[' then --time to check if its a pausing command
+				local pauseValue, paused, pauseLen = atPause(self.Text, i)
+				pauseValue = tonumber(pauseValue)
+				pauseLen = tonumber(pauseLen) or 0
+				if paused then
+					self.Text = self.Text:sub(1, i-1)..self.Text:sub(i+pauseLen, -1)
+					currentText = string.sub(self.Text, 1, i)
+					currentChar = string.sub(self.Text, i, i)
+					if pauseValue then Pause(self, pauseValue) task.wait(pauseValue) end
+				end
+			end
+
 			local yield = isSpecialChar(currentChar)
 				
 			if Mode == typewriter.TypeModes.Create then 
@@ -427,8 +490,8 @@ function typewriter:Typewrite(Mode: string?, ContinueSpace: boolean?, Sound: Sou
 			elseif typewriter.TypeModes.Continue then
 				self.TextLabel.Text = oldText..currentText 
 			end
-			
-			if Sound and Sound:IsA('Sound') then Sound:Play() end
+
+			if self.Sound and self.Sound:IsA('Sound') then self.Sound:Play() end
 			
 			--[[  after destroying, self can turn into an empty table and fire it through the signal
 				                           |                  
@@ -446,7 +509,6 @@ function typewriter:Typewrite(Mode: string?, ContinueSpace: boolean?, Sound: Sou
 	-- if you want to add this use :SetContinueSpaceEnabled.
 	
 	--self.ContinueSpace = ContinueSpace
-	if Sound then self.Sound = Sound end
 	--table.insert(running, self)
 	updateSessionThread(self)
 	
@@ -506,6 +568,11 @@ function typewriter:SetCharactersPerSecond(CharsPerSec: number)
 	self.Time = 1/CharsPerSec
 end
 
+function typewriter:SetTimeBetweenTyping(time: number) -- almost what SetCharacterPerSecond does, but u set the time, SCPS method automatically does that
+	if checkIfObjectRunning(self) then typewriter.Wait(self) end
+	self.Time = time or 1/25
+end
+
 function typewriter:SetMode(Mode: string)
 	if checkIfObjectRunning(self) then typewriter.Wait(self) end
 	self.Mode = Mode or typewriter.TypeModes.Create
@@ -524,7 +591,7 @@ end
 --end
 
 function typewriter:SetSound(Sound: Sound)
-	if not Sound then return end
+	if not Sound:IsA('Sound') then return end
 	if checkIfObjectRunning(self) then typewriter.Wait(self) end
 	self.Sound = Sound
 end
