@@ -266,17 +266,6 @@ typewriter.Resumed = FastSignal.new()
 
 typewriter.Destroyed = FastSignal.new()
 
-local function returnPauses(text: string) --for an upcoming update
-	local result = {}
-	local letters = text:split('')
-
-	for i, letter in letters do
-		if letter ~= '[' then continue end
-		local p = letters[i+1] == 'p'
-
-	end
-end
-
 local function isSpecialChar(character: string) : boolean
 	return table.find(DEFAULT_SPECIAL_CHARS, character) ~= nil
 end
@@ -430,6 +419,7 @@ function typewriter:Typewrite(Mode: string?, ContinueSpace: boolean?, Sound: Sou
 			if self.Finished then break end
 			local currentText = string.sub(self.Text, 1, i)
 			local currentChar = string.sub(self.Text, i, i)
+			
 			local yield = isSpecialChar(currentChar)
 				
 			if Mode == typewriter.TypeModes.Create then 
