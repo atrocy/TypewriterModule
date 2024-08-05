@@ -206,19 +206,32 @@
 				  If you put it on the bottom, the objects will yield the code and the connectors wont be able
 				  to get triggered.
 		
-			Typewriter.Finished:Connect(function(obj)) -> TypewriterObject
+			Typewriter.Finished:Connect(object) -> TypewriterObject
 				Description:
 					Gets triggered when a TypewriterObject finishes Typewriting, returning itself.
 			
 			
-			Typewriter.Canceled:Connect(function(obj)) -> TypewriterObject
+			Typewriter.Canceled:Connect(object) -> TypewriterObject
 				Description:
-					Gets triggered when a TypewriterObject gets canceled, returning itself.
+					Gets triggered when a TypewriterObject cancels, returning itself.
 				Note:
 					Canceled only returns a session with the parameters you provided.
 					What does this mean?
 					If you used Mode Continue, it wont return obj.Text with the previous text, only with the text parameter-
 					-YOU provided.
+
+			
+			Typewriter.Resumed:Connect(object) -> TypewriterObject
+				Description:
+					Gets triggered when a TypewriterObject resumes, returning itself.
+			
+
+			Typewriter.Destroyed:Connect(object) -> TypewriterObject
+				Description:
+					Gets triggered when a TypewriterObject destroys, returning itself.
+				Note:
+					Most likely going to return a TypewriterObject that only contains a dead thread. Not very useful..
+					
 					
 				
 		
@@ -252,6 +265,17 @@ typewriter.Canceled = FastSignal.new()
 typewriter.Resumed = FastSignal.new()
 
 typewriter.Destroyed = FastSignal.new()
+
+local function returnPauses(text: string) --for an upcoming update
+	local result = {}
+	local letters = text:split('')
+
+	for i, letter in letters do
+		if letter ~= '[' then continue end
+		local p = letters[i+1] == 'p'
+
+	end
+end
 
 local function isSpecialChar(character: string) : boolean
 	return table.find(DEFAULT_SPECIAL_CHARS, character) ~= nil
@@ -419,8 +443,7 @@ function typewriter:Typewrite(Mode: string?, ContinueSpace: boolean?, Sound: Sou
 			--[[  after destroying, self can turn into an empty table and fire it through the signal
 				                           |                  
 				                          THIS        ]]
-			
-			if i >= #self.Text and self ~= {} then self.Text = self.TextLabel.Text self.Finished = true Finish(self) end
+			if i >= #self.Text and #self == 0 then self.Text = self.TextLabel.Text self.Finished = true Finish(self) end
 			
 			if self.Time ~= -1 and (not yield or not self.SpecialCharYield) then task.wait(self.Time) end
 			if self.SpecialCharYield and yield then task.wait(self.SpecialCharYieldTime) end
