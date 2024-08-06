@@ -77,7 +77,7 @@
 		
 		[ FUNCTIONS ]
 		
-			Typewriter.new(TextLabel, text: string, CharactersPerSecond: number, yieldOnSpecialChar: boolean?) -> TypewriterObject
+			Typewriter.new(TextLabel, text: string, CharactersPerSecond: number, Sound: Sound?, yieldOnSpecialChar: boolean?) -> TypewriterObject
 				Description:
 					Creates a new TypewriterObject
 				Note:
