@@ -66,7 +66,7 @@
 					Default yield time for special characters is 0.5
 					
 					
-			TypewriterObject.SetDefaultSpecialCharYieldTime(time: number) -> ()
+			Typewriter.SetDefaultSpecialCharYieldTime(time: number) -> ()
 				Description:
 					Sets a yield time for special characters for the typewriter object.
 					
