@@ -14,7 +14,7 @@
 	
 	# Typewriter
 	Easy, simple, typewriter effect!
-	With features like: Cancelling, Resuming, Yielding on special characters... AND MORE!
+	With features like: Canceling, Resuming, Yielding on special characters... AND MORE!
 	
 	[ Example Usage ]
 		local TypewriterModule = require(path)
@@ -50,9 +50,9 @@
 					Default yield time for special characters is 0.5
 					
 					
-			TypewriterObject.SetDefaultSpecialCharYieldTime(time: number) -> ()
+			Typewriter.SetDefaultSpecialCharYieldTime(time: number) -> ()
 				Description:
-					Sets a yield time for special characters for the typewriter object.
+					Sets a yield time for special characters for typewriter.
 					
 					
 			Typewriter.SetDefaultContinueSpace(Enabled: boolean)
@@ -61,7 +61,7 @@
 		
 		[ FUNCTIONS ]
 		
-			Typewriter.new(TextLabel, text: string, CharactersPerSecond: number, yieldOnSpecialChar: boolean?) -> TypewriterObject
+			Typewriter.new(TextLabel, text: string, CharactersPerSecond: number, Sound: Sound?, yieldOnSpecialChar: boolean?) -> TypewriterObject
 				Description:
 					Creates a new TypewriterObject
 				Note:
