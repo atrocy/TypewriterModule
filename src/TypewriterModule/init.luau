@@ -3,7 +3,11 @@
 	
 	[ UPDATE 1.2.5 ]
 		Added:	
-				
+
+			[ FUNCTION UPDATES ]
+				TypingObject:Wait(waitAfterFinish: number) now has a waitAfterFinish argument that'll wait until
+				TypingObject finishes typing and THEN waiting for the how much time you provided.
+
 			[ OBJECT UPDATES ]
 				Thread property is now named _thread, it is read only property.
 				
