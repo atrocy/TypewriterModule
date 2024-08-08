@@ -1,0 +1,9 @@
+[package]
+name = "admin/typewritermodule"
+version = "0.1.0"
+registry = "https://github.com/UpliftGames/wally-index"
+realm = "shared"
+
+[dependencies]
+Trove = "sleitnick/trove@1.3.0"
+Signal = "sleitnick/signal@^1"

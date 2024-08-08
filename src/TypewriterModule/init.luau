@@ -1,32 +1,16 @@
 --[[
 	Made by cheez1i!!!!(aka Romazka57/atrocy)
-
-	This module uses FastSignal.
-	https://devforum.roblox.com/t/fastsignal-1021-a-consistent-signal-library/1360042
 	
-	[ UPDATE 1.2.4 ]
-		Added:
-		
-			[ EVENTS ]
-			 	Paused event.
-			
-			[ FUNCTIONS ]
-			
-				TypingObject:SetTimeBetweenTyping(time: number) [almost the same as SetCharacterPerSecond but you actually set the time, Example: 0.3]
-				
-			[ OTHER CHANGES ]
-				**IMPORTANT**
-					You can now PAUSE the text using [p:number] command!
-						Example:
-							local TypeObj = TypingModule.new(path, 'Hello,[p:0.5] Player!')
-							TypeObj:Typewrite()
-				
+	[ UPDATE 1.2.5 ]
+		Added:	
 				
 			[ OBJECT UPDATES ]
-				Sound property [Now Works Correctly.]
+				Thread property is now named _thread, it is read only property.
 				
 		Fixes:
-			Sound
+			Destroyed event was renamed to Destroying.
+			Destroying event now returns the full object instead of a dead thread
+			Typewriter method now checks if previous thread is either running or suspended then KILLS it.
 	
 	# Typewriter
 	Easy, simple, typewriter effect!
@@ -242,11 +226,12 @@
 					Gets triggered when a TypewriterObject pauses, returning itself.
 			
 
-			Typewriter.Destroyed:Connect(object) -> TypewriterObject
+			Typewriter.Destroying:Connect(object) -> TypewriterObject
 				Description:
 					Gets triggered when a TypewriterObject destroys, returning itself.
 				Note:
-					Most likely going to return a TypewriterObject that only contains a dead thread. Not very useful..
+					 ̶M̶o̶s̶t̶ ̶l̶i̶k̶e̶l̶y̶ ̶g̶o̶i̶n̶g̶ ̶t̶o̶ ̶r̶e̶t̶u̶r̶n̶ ̶a̶ ̶T̶y̶p̶e̶w̶r̶i̶t̶e̶r̶O̶b̶j̶e̶c̶t̶ ̶t̶h̶a̶t̶ ̶o̶n̶l̶y̶ ̶c̶o̶n̶t̶a̶i̶n̶s̶ ̶a̶ ̶d̶e̶a̶d̶ ̶t̶h̶r̶e̶a̶d̶.̶ ̶N̶o̶t̶ ̶v̶e̶r̶y̶ ̶u̶s̶e̶f̶u̶l̶.̶.̶
+					 Now returns the full object :)
 					
 			
 		[ TEXT COMMANDS ]
@@ -261,8 +246,10 @@
 		
 
 ]]
+local Packages = script.Packages
 
-local FastSignal = require(script.FastSignal)
+local Signal = require(Packages.Signal)
+local Trove = require(Packages.Trove)
 
 local typewriter = {}
 typewriter.__index = typewriter
@@ -284,13 +271,34 @@ typewriter.TypeModes = {
 	Continue = 'Continue'
 }
 
-typewriter.Finished = FastSignal.new()
+typewriter.Finished = Signal.new()
 
-typewriter.Canceled = FastSignal.new()
-typewriter.Paused = FastSignal.new()
-typewriter.Resumed = FastSignal.new()
+typewriter.Canceled = Signal.new()
+typewriter.Paused = Signal.new()
+typewriter.Resumed = Signal.new()
 
-typewriter.Destroyed = FastSignal.new()
+typewriter.Destroying = Signal.new()
+
+--event fire functions
+local function Finish(session)
+	typewriter.Finished:Fire(session)
+end
+
+local function onCancel(session)
+	typewriter.Canceled:Fire(session)
+end
+
+local function Pause(session, time: number)
+	typewriter.Paused:Fire(session, time)
+end
+
+local function onResume(session)
+	typewriter.Resumed:Fire(session)
+end
+
+local function onDestroy(session)
+	typewriter.Destroying:Fire(session)
+end
 
 local function atPause(text: string, index: number) --use when u hit on [ character
 	local p = text:sub(index+1, index+1) == 'p'
@@ -314,14 +322,28 @@ local function isSpecialChar(character: string) : boolean
 	return table.find(DEFAULT_SPECIAL_CHARS, character) ~= nil
 end
 
+
+local function setNilToObject(object)
+	for i, v in object do
+		if typeof(v) == 'thread' then
+			if coroutine.status(v) ~= 'running' or coroutine.status(v) ~= 'suspended' then return end
+			coroutine.close(v)
+		end
+		object[i] = nil
+	end
+end
+
 local function destroySession(object)
 	for i, thread in running do
-		if thread.TextLabel ~= object.TextLabel and not thread.Thread then continue end
+		if thread.TextLabel ~= object.TextLabel and not thread._thread then continue end
+		--destroy the object itself
+		onDestroy(object)
+		setNilToObject(object)
 		
+		--get it out of running table idiot
 		typewriter.Cancel(thread)
-		typewriter.Destroy(thread)
-		coroutine.close(thread.Thread)
-		thread.Thread = nil
+		coroutine.close(thread._thread)
+		thread._thread = nil
 		thread = nil
 		object = nil
 		table.remove(running, i)
@@ -330,8 +352,8 @@ end
 
 local function updateSessionThread(object)
 	for _, thread in running do
-		if thread.Thread ~= object.Thread then continue end
-		thread.Thread = object.Thread
+		if thread._thread ~= object._thread then continue end
+		thread._thread = object._thread
 		return
 	end
 	
@@ -340,7 +362,7 @@ end
 
 local function checkIfOtherRunning(object)
 	for _, thread in running do
-		if thread.TextLabel ~= object.TextLabel or not thread.Thread or thread == object then continue end
+		if thread.TextLabel ~= object.TextLabel or not thread._thread or thread == object then continue end
 		return thread
 	end
 	
@@ -356,41 +378,7 @@ local function checkIfObjectRunning(object)
 	return false
 end
 
-local function setNilToObject(object)
-	object.TextLabel = nil
-	object.Text = nil
-	object.Time = nil
-	object.SpecialCharYield = nil
-	object.SpecialCharYieldTime = nil
-	object.Canceled = nil
-	object.Finished = nil
-	object.Mode = nil
-	object.ContinueSpace = nil
-	if object.Sound then object.Sound = nil end
-	--object.Thread closing is going to be handled in a destroySession function.
-end
-
---event fire functions
-local function Finish(session)
-	typewriter.Finished:Fire(session)
-end
-
-local function onCancel(session)
-	typewriter.Canceled:Fire(session)
-end
-
-local function Pause(session, time: number)
-	typewriter.Paused:Fire(session, time)
-end
-
-local function onResume(session)
-	typewriter.Resumed:Fire(session)
-end
-
-local function onDestroy(session)
-	typewriter.Destroyed:Fire(session)
-end
---
+-- Module Functions
 function typewriter.new(TextLabel: TextLabel, Text: string, CharsPerSec: number, Sound: Sound, yieldOnSpecialChars: boolean?)
 	TextLabel = TextLabel or Instance.new('TextLabel')
 	Text = Text or ''
@@ -404,9 +392,12 @@ function typewriter.new(TextLabel: TextLabel, Text: string, CharsPerSec: number,
 	self.Text = Text
 	self.Time = 1/CharsPerSec
 	self.Sound = Sound
+
 	self.SpecialCharYield = yieldOnSpecialChars
 	self.SpecialCharYieldTime = settings.DEFAULT_SPECIAL_CHAR_YIELD
-	self.Thread = false
+
+	self._thread = false
+
 	self.Canceled = false
 	self.Finished = false
 	
@@ -465,6 +456,8 @@ function typewriter:Typewrite(Mode: string?, ContinueSpace: boolean?) --if sound
 	local isRunning = checkIfOtherRunning(self)
 	if isRunning ~= nil then destroySession(isRunning) end
 
+	if self._thread then if coroutine.status(self._thread) == 'running' or coroutine.status(self._thread) == 'suspended' then coroutine.close(self._thread) end end
+
 	local thread = coroutine.create(function()
 		for i = 1, #self.Text do
 			if self.Finished then break end
@@ -504,7 +497,7 @@ function typewriter:Typewrite(Mode: string?, ContinueSpace: boolean?) --if sound
 		end
 	end)
 	
-	self.Thread = thread
+	self._thread = thread
 	self.Mode = Mode
 	-- if you want to add this use :SetContinueSpaceEnabled.
 	
@@ -518,11 +511,10 @@ end
 function typewriter:Destroy()
 	if self.TextLabel then 
 		self.Finished = true
-		Finish(self)
-		onDestroy(self)
-		setNilToObject(self)
+
+		destroySession(self)
 		for i, thread in running do
-			if thread.Thread ~= self.Thread then continue end
+			if thread._thread ~= self._thread then continue end
 			running[i] = nil
 			return
 		end
@@ -539,21 +531,23 @@ function typewriter:Clear()
 end
 
 function typewriter:Cancel()
-	if self.Thread and not self.Canceled then self.Canceled = true onCancel(self) end
+	if self._thread and not self.Canceled then self.Canceled = true onCancel(self) end
 end
 
 function typewriter:Resume()
-	if self.Thread and self.Canceled then self.Canceled = false coroutine.resume(self.Thread) onResume(self) end
+	if self._thread and self.Canceled then self.Canceled = false coroutine.resume(self._thread) onResume(self) end
 end
 
 function typewriter:IsActive()
 	return self.Canceled == false
 end
 
-function typewriter:Wait()
+function typewriter:Wait(waitAfterFinishing: number?)
 	repeat task.wait()
 		
 	until self.Finished
+
+	if typeof(waitAfterFinishing) == 'number' then task.wait(waitAfterFinishing) end
 	return self
 end
 
