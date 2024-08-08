@@ -12,7 +12,7 @@ Or.. you could download the luau scripts and insert them in studio!
 local TypewriterModule = require(path)
 local textlabel = path
 local text = 'NPC: Hello, how are you doing?? Yeah.. same.'
-local TypeObj = TypewriterModule.new(textlabel, text, 25, true)
+local TypeObj = TypewriterModule.new(textlabel, text, 25, nil, true)
 
 TypewriterModule.Finished:Connect(function(obj)
 print(obj.Text) 
