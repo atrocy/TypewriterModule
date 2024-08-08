@@ -272,8 +272,8 @@ typewriter.TypeModes = {
 }
 
 typewriter.Finished = Signal.new()
-
 typewriter.Canceled = Signal.new()
+
 typewriter.Paused = Signal.new()
 typewriter.Resumed = Signal.new()
 
