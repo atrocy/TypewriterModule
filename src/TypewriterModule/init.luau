@@ -3,7 +3,11 @@
 	
 	[ UPDATE 1.2.6 ]
 		Added:	
-				
+
+			[ FUNCTION UPDATES ]
+				TypingObject:Wait(waitAfterFinish: number) now has a waitAfterFinish argument that'll wait until
+				TypingObject finishes typing and THEN waiting for the how much time you provided.
+
 			[ OBJECT UPDATES ]
 				Canceled and Finished properties were renamed to _canceled and _finished
 				they are now consindered PRIVATE, you should NOT modify them
