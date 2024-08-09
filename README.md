@@ -3,8 +3,7 @@
 ## Instructions:
 You can get the [TypewriterModule](https://create.roblox.com/store/asset/18773924561/TypewriterModule) from Creator Hub! <br/>
 
-Or.. you could download the luau scripts and insert them in studio!
-(Make sure FastSignal is located inside of TypewriterModule with Deferred and Immediate Module Scripts in it.)
+For rojo you can download the source code.
 
 ## Example Usage:
 
