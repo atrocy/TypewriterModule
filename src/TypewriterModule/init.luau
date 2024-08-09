@@ -1,16 +1,18 @@
 --[[
 	Made by cheez1i!!!!(aka Romazka57/atrocy)
 	
-	[ UPDATE 1.2.5 ]
+	[ UPDATE 1.2.6 ]
 		Added:	
 				
 			[ OBJECT UPDATES ]
-				Thread property is now named _thread, it is read only property.
+				Canceled and Finished properties were renamed to _canceled and _finished
+				they are now consindered PRIVATE, you should NOT modify them
 				
 		Fixes:
-			Destroyed event was renamed to Destroying.
-			Destroying event now returns the full object instead of a dead thread
-			Typewriter method now checks if previous thread is either running or suspended then KILLS it.
+			Some code fixes
+			Doc/Example fix
+			Removed Trove Module (was planned to use)
+			
 	
 	# Typewriter
 	Easy, simple, typewriter effect!
@@ -20,7 +22,7 @@
 		local TypewriterModule = require(path)
 		local textlabel = script.Parent
 		local text = 'NPC: Hello, how are you doing?? Yeah.. same.'
-		local TypeObj = TypewriterModule.new(textlabel, text, 25, true)
+		local TypeObj = TypewriterModule.new(textlabel, text, 25, nil, true)
 
 		TypewriterModule.Finished:Connect(function(obj)
 			print(obj.Text)
@@ -116,10 +118,10 @@
 					Returns if the object is active, do be exact, if it is canceled or not.
 					
 					
-			TypewriterObject:Wait() -> yields
+			TypewriterObject:Wait(waitAfterFinish: number) -> yields
 				Description:
 					Yields the code until the object is finished typewriting.
-					
+					TypingObject finishes typing and THEN waiting for the how much time you provided.
 					
 			TypewriterObject:SetText(text: string) -> ()
 				Description:
@@ -249,11 +251,10 @@
 local Packages = script.Packages
 
 local Signal = require(Packages.Signal)
-local Trove = require(Packages.Trove)
 
 local typewriter = {}
 typewriter.__index = typewriter
-typewriter.Version = '1.2.4'
+typewriter.Version = '1.2.6'
 
 local DEFAULT_SPECIAL_CHARS = { --default special characters, you can modify this.
 	',','.','!','?'
@@ -326,7 +327,7 @@ end
 local function setNilToObject(object)
 	for i, v in object do
 		if typeof(v) == 'thread' then
-			if coroutine.status(v) ~= 'running' or coroutine.status(v) ~= 'suspended' then return end
+			if coroutine.status(v) ~= 'running' or coroutine.status(v) ~= 'suspended' then continue end
 			coroutine.close(v)
 		end
 		object[i] = nil
@@ -334,26 +335,27 @@ local function setNilToObject(object)
 end
 
 local function destroySession(object)
-	for i, thread in running do
-		if thread.TextLabel ~= object.TextLabel and not thread._thread then continue end
+	for i, obj in running do
+		if obj.TextLabel ~= object.TextLabel and not obj._thread then continue end
 		--destroy the object itself
 		onDestroy(object)
 		setNilToObject(object)
 		
 		--get it out of running table idiot
-		typewriter.Cancel(thread)
-		coroutine.close(thread._thread)
-		thread._thread = nil
-		thread = nil
+		-- typewriter.Cancel(obj)
+		obj:Cancel()
+		coroutine.close(obj._thread)
+		obj._thread = nil
+		obj = nil
 		object = nil
 		table.remove(running, i)
 	end
 end
 
 local function updateSessionThread(object)
-	for _, thread in running do
-		if thread._thread ~= object._thread then continue end
-		thread._thread = object._thread
+	for _, obj in running do
+		if obj._thread ~= object._thread then continue end
+		obj._thread = object._thread
 		return
 	end
 	
@@ -361,17 +363,17 @@ local function updateSessionThread(object)
 end
 
 local function checkIfOtherRunning(object)
-	for _, thread in running do
-		if thread.TextLabel ~= object.TextLabel or not thread._thread or thread == object then continue end
-		return thread
+	for _, obj in running do
+		if obj.TextLabel ~= object.TextLabel or not obj._thread or obj == object then continue end
+		return obj
 	end
 	
 	return nil
 end
 
 local function checkIfObjectRunning(object)
-	for _, thread in running do
-		if thread ~= object then continue end
+	for _, obj in running do
+		if obj ~= object then continue end
 		return true
 	end
 
@@ -398,8 +400,8 @@ function typewriter.new(TextLabel: TextLabel, Text: string, CharsPerSec: number,
 
 	self._thread = false
 
-	self.Canceled = false
-	self.Finished = false
+	self._canceled = false
+	self._finished = false
 	
 	return self
 end
@@ -434,9 +436,9 @@ Modes:
 
 ]]
 
-function typewriter:Typewrite(Mode: string?, ContinueSpace: boolean?) --if sound is provided, it will override the Object's sound.
+function typewriter:Typewrite(Mode: string?, ContinueSpace: boolean?)
 	if not self.TextLabel or not self.Text or not self.Time then return end
-	if self.Finished then self.Finished = false end
+	if self._finished then self._finished = false end
 	
 	-- Why cant we just do ContinueSpace = ContinueSpace or true?
 	-- Because if Enabled is set to false it will turn into true, due to roblox's logic
@@ -460,7 +462,7 @@ function typewriter:Typewrite(Mode: string?, ContinueSpace: boolean?) --if sound
 
 	local thread = coroutine.create(function()
 		for i = 1, #self.Text do
-			if self.Finished then break end
+			if self._finished then break end
 			local currentText = string.sub(self.Text, 1, i)
 			local currentChar = string.sub(self.Text, i, i)
 
@@ -489,11 +491,11 @@ function typewriter:Typewrite(Mode: string?, ContinueSpace: boolean?) --if sound
 			--[[  after destroying, self can turn into an empty table and fire it through the signal
 				                           |                  
 				                          THIS        ]]
-			if i >= #self.Text and #self == 0 then self.Text = self.TextLabel.Text self.Finished = true Finish(self) end
+			if i >= #self.Text and #self == 0 then self.Text = self.TextLabel.Text self._finished = true Finish(self) end
 			
 			if self.Time ~= -1 and (not yield or not self.SpecialCharYield) then task.wait(self.Time) end
 			if self.SpecialCharYield and yield then task.wait(self.SpecialCharYieldTime) end
-			if self.Canceled then coroutine.yield() end
+			if self._canceled then coroutine.yield() end
 		end
 	end)
 	
@@ -510,11 +512,11 @@ end
 
 function typewriter:Destroy()
 	if self.TextLabel then 
-		self.Finished = true
+		self._finished = true
 
 		destroySession(self)
-		for i, thread in running do
-			if thread._thread ~= self._thread then continue end
+		for i, obj in running do
+			if obj._thread ~= self._thread then continue end
 			running[i] = nil
 			return
 		end
@@ -524,80 +526,77 @@ end
 
 function typewriter:Clear()
 	if self.TextLabel then
-		self.Finished = true
+		self._finished = true
 		Finish(self)
 		self.TextLabel.Text = ''
 	end
 end
 
 function typewriter:Cancel()
-	if self._thread and not self.Canceled then self.Canceled = true onCancel(self) end
+	--checking if self has more than 0 contents just in case if it is destroying
+	if self._thread and not self._canceled and #self > 0 then self._canceled = true onCancel(self) end
 end
 
 function typewriter:Resume()
-	if self._thread and self.Canceled then self.Canceled = false coroutine.resume(self._thread) onResume(self) end
+	if self._thread and self._canceled then self._canceled = false coroutine.resume(self._thread) onResume(self) end
 end
 
 function typewriter:IsActive()
-	return self.Canceled == false
+	return self._canceled == false
 end
 
 function typewriter:Wait(waitAfterFinishing: number?)
 	repeat task.wait()
 		
-	until self.Finished
+	until self._finished
 
 	if typeof(waitAfterFinishing) == 'number' then task.wait(waitAfterFinishing) end
 	return self
 end
 
 function typewriter:SetText(text: string)
-	if checkIfObjectRunning(self) then typewriter.Wait(self) end
+	if checkIfObjectRunning(self) then self:Wait() end
 	self.Text = text or ''
 end
 
 function typewriter:SetCharactersPerSecond(CharsPerSec: number)
-	if checkIfObjectRunning(self) then typewriter.Wait(self) end
+	if checkIfObjectRunning(self) then self:Wait() end
 	CharsPerSec = CharsPerSec or 25
 	self.Time = 1/CharsPerSec
 end
 
 function typewriter:SetTimeBetweenTyping(time: number) -- almost what SetCharacterPerSecond does, but u set the time, SCPS method automatically does that
-	if checkIfObjectRunning(self) then typewriter.Wait(self) end
+	if checkIfObjectRunning(self) then self:Wait() end
 	self.Time = time or 1/25
 end
 
 function typewriter:SetMode(Mode: string)
-	if checkIfObjectRunning(self) then typewriter.Wait(self) end
+	if checkIfObjectRunning(self) then self:Wait() end
 	self.Mode = Mode or typewriter.TypeModes.Create
 end
 
 function typewriter:SetContinueSpaceEnabled(Enabled: boolean)
-	if checkIfObjectRunning(self) then typewriter.Wait(self) end
+	if checkIfObjectRunning(self) then self:Wait() end
 	-- Why cant we just do Enabled = Enabled or true?
 	-- Because if Enabled is set to false it will turn into true, due to roblox's logic
 	if Enabled == nil or typeof(Enabled) ~= 'boolean' then Enabled = true end
 	self.ContinueSpace = Enabled
 end
 
---function typewriter:UnsetContinueSpace()
---	if self.ContinueSpace ~= nil then self.ContinueSpace = nil end **GOT DEPRECATED WHILE PUSHING THE UPDATE LOL**
---end
-
 function typewriter:SetSound(Sound: Sound)
 	if not Sound:IsA('Sound') then return end
-	if checkIfObjectRunning(self) then typewriter.Wait(self) end
+	if checkIfObjectRunning(self) then self:Wait() end
 	self.Sound = Sound
 end
 
 function typewriter:SetSpecialCharYieldTime(time: number)
-	if checkIfObjectRunning(self) then typewriter.Wait(self) end
+	if checkIfObjectRunning(self) then self:Wait() end
 	time = math.abs(time) or settings.DEFAULT_SPECIAL_CHAR_YIELD
 	self.SpecialCharYieldTime = time
 end
 
 function typewriter:SetSpecialCharYieldEnabled(Enabled: boolean)
-	if checkIfObjectRunning(self) then typewriter.Wait(self) end
+	if checkIfObjectRunning(self) then self:Wait() end
 	-- Why cant we just do Enabled = Enabled or true?
 	-- Because if Enabled is set to false it will turn into true, due to roblox's logic
 	if Enabled == nil or typeof(Enabled) ~= 'boolean' then Enabled = true end
@@ -615,7 +614,7 @@ function typewriter:FinishText()
 			self.TextLabel.Text = textLabelText..self.Text
 		end
 		
-		self.Finished = true
+		self._finished = true
 		Finish(self)
 	end
 end
