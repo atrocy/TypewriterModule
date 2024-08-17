@@ -1,4 +1,4 @@
-# TypewriterModule 1.2.6
+# TypewriterModule 1.2.7
 
 ## Instructions:
 You can get the [TypewriterModule](https://create.roblox.com/store/asset/18773924561/TypewriterModule) from Creator Hub! <br/>

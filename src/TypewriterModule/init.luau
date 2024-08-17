@@ -1,17 +1,15 @@
 --[[
 	Made by cheez1i!!!!(aka Romazka57/atrocy)
 	
-	[ UPDATE 1.2.6 ]
+	[ UPDATE 1.2.7 ]
 		Added:	
 
+			[ METHODS ]
+			 	AddSpecialChars(charTable: table)
+				RemoveSpecialChars(charTable: table)
+
 			[ OBJECT UPDATES ]
-				Canceled and Finished properties were renamed to _canceled and _finished
-				they are now consindered PRIVATE, you should NOT modify them
-				
-		Fixes:
-			Some code fixes
-			Doc/Example fix
-			Removed Trove Module (was planned to use)
+				_specialCharsList (consindered private, read only)
 			
 	
 	# Typewriter
@@ -186,6 +184,19 @@
 				Note:
 					If object is typewriting, it'll yield the code until its finished, then it sets the new value for yield time.
 			
+
+			TypewriterObject:AddSpecialChars(charTable: table) -> ()
+				Description:
+					Adds new special chars for typing object
+				Example:
+					TypewriterObject:AddSpecialChars({["a"] = 1, ["bc"] = 0.2}) -- { ["a"] = 1, ["b"] = 0.2, ["c"] = 0.2 }
+
+			
+			TypewriterObject:RemoveSpecialChars(charTable: table) -> ()
+				Description:
+					Removes special chars from typing object
+				Example:
+					TypewriterObject:RemoveSpecialChars({"a","bc"}) -- { ["a"] = 1 }
 			
 			TypewriterObject:FinishText() -> ()
 				Description:
@@ -254,7 +265,7 @@ local Signal = require(Packages.Signal)
 
 local typewriter = {}
 typewriter.__index = typewriter
-typewriter.Version = '1.2.6'
+typewriter.Version = '1.2.7'
 
 local DEFAULT_SPECIAL_CHARS = { --default special characters, you can modify this.
 	',','.','!','?'
@@ -319,8 +330,12 @@ local function atPause(text: string, index: number) --use when u hit on [ charac
 	return nil, false, nil --if not column
 end
 
-local function isSpecialChar(character: string) : boolean
-	return table.find(DEFAULT_SPECIAL_CHARS, character) ~= nil
+local function isSpecialChar(typeobj, character: string) : (boolean, number?)
+	character = character:lower()
+	local chartable = table.find(typeobj._specialCharsList, character:lower()) ~= nil or typeobj._specialCharsList[character]
+	local yieldTime = typeobj._specialCharsList[character] or nil
+
+	return chartable, yieldTime
 end
 
 
@@ -397,6 +412,8 @@ function typewriter.new(TextLabel: TextLabel, Text: string, CharsPerSec: number,
 
 	self.SpecialCharYield = yieldOnSpecialChars
 	self.SpecialCharYieldTime = settings.DEFAULT_SPECIAL_CHAR_YIELD
+
+	self._specialCharsList = DEFAULT_SPECIAL_CHARS
 
 	self._thread = false
 
@@ -478,7 +495,7 @@ function typewriter:Typewrite(Mode: string?, ContinueSpace: boolean?)
 				end
 			end
 
-			local yield = isSpecialChar(currentChar)
+			local yield, yieldTime = isSpecialChar(self, currentChar)
 				
 			if Mode == typewriter.TypeModes.Create then 
 				self.TextLabel.Text = currentText 
@@ -494,7 +511,7 @@ function typewriter:Typewrite(Mode: string?, ContinueSpace: boolean?)
 			if i >= #self.Text and #self == 0 then self.Text = self.TextLabel.Text self._finished = true Finish(self) end
 			
 			if self.Time ~= -1 and (not yield or not self.SpecialCharYield) then task.wait(self.Time) end
-			if self.SpecialCharYield and yield then task.wait(self.SpecialCharYieldTime) end
+			if self.SpecialCharYield and yield then task.wait(yieldTime or self.SpecialCharYieldTime) end
 			if self._canceled then coroutine.yield() end
 		end
 	end)
@@ -601,6 +618,51 @@ function typewriter:SetSpecialCharYieldEnabled(Enabled: boolean)
 	-- Because if Enabled is set to false it will turn into true, due to roblox's logic
 	if Enabled == nil or typeof(Enabled) ~= 'boolean' then Enabled = true end
 	self.SpecialCharYield = Enabled
+end
+
+function typewriter:AddSpecialChars(charTable: {}) --{["a"] = 0.2...}
+	if typeof(charTable) ~= 'table' then warn('Please provide a table.') return end
+
+	for char, yieldTime in charTable do
+		char = char:lower()
+
+		if #char > 1 then --multiple characters in index
+			for letter in char:gmatch('.') do
+				if self._specialCharsList[letter] or table.find(self._specialCharsList, letter) then continue end
+				print(letter)
+				self._specialCharsList[letter] = yieldTime or self.SpecialCharYieldTime
+			end
+			continue
+		end
+		if not yieldTime or typeof(yieldTime) ~= 'number' then warn('Please provide yieldTime for the character.') continue end
+		if self._specialCharsList[char] or table.find(self._specialCharsList, char) then continue end
+
+		self._specialCharsList[char] = yieldTime or self.SpecialCharYieldTime
+	end
+end
+
+function typewriter:RemoveSpecialChars(charTable: {})
+	if typeof(charTable) ~= 'table' then warn('Please provide a table.') return end
+
+	for _, char in charTable do
+		char = char:lower()
+
+		if #char > 1 then --multiple charcter in index again!!
+			for letter in char:gmatch('.') do
+				local charInTable = self._specialCharsList[letter] or table.find(self._specialCharsList, letter)
+				if not charInTable then continue end
+				for charkey, charvalue in self._specialCharsList do
+					if charkey == letter or charvalue == letter then self._specialCharsList[charkey] = nil end
+				end
+			end
+			continue
+		end
+
+		for charkey, charvalue in self._specialCharsList do
+			if charkey == char or charvalue == char then self._specialCharsList[charkey] = nil end
+		end
+	end
+
 end
 
 function typewriter:FinishText()
